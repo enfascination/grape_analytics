@@ -1,3 +1,4 @@
+## Description
 scripts for analysing Forrestel wine data, 2015, napa
 
 number in order of development/evolution and dependence
@@ -8,9 +9,9 @@ data should be stored in ../data. files as called are sometimes minor tweaks
 from raw data.
 
 
+## Manifest
 * `01_functions_pheno_models.R` (Morales phenological functions (improved fork).
 from https://github.com/MoralesCastilla/PhenoDiversity)
-* `01_hustle.R` DEPRECATED (early getting started)
 * `01_stat_functions.R` (simple stat functions; based on MOrales code)
 * `015_data_prep.R` (from raw data to data clean enough for scripts.  prereq to most scripts with higher numbers)
 * `019_predict_phenological_early.R` (fit phenological models iwthout optmization)
@@ -27,3 +28,14 @@ climate/environment data)
 * `.Renviron` (maintains analysis state across scripts with environemtn
   variables)
 * `Makefile` (has example commands.  e.g. `make main`, `make predict1`)
+* `env.yml` (for reproducing the environment (incl most R packages))
+
+## Usage
+1. has example commands.  e.g. `make main`, `make predict1`
+1. `conda env create -f r_env.yml`
+1. `source activate r_env`
+1. Install a bunch of R packages as needed
+2. `make main` #for phenological models
+3. `make predict1`
+4. `make predict2`
+

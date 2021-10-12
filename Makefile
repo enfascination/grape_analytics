@@ -3,6 +3,7 @@
 
 main:
 	r < 015_data_prep.R --no-save
+	r < 019_predict_phenological_early.R --no-save
 	r < 02_predict_phenological.R --no-save
 predict1:
 	r < 015_data_prep.R --no-save
