@@ -1,0 +1,29 @@
+scripts for analysing Forrestel wine data, 2015, napa
+
+number in order of development/evolution and dependence
+
+Makefile has examples of how to run each script
+
+data should be stored in ../data. files as called are sometimes minor tweaks
+from raw data.
+
+
+* `01_functions_pheno_models.R` (Morales phenological functions (improved fork).
+from https://github.com/MoralesCastilla/PhenoDiversity)
+* `01_hustle.R` DEPRECATED (early getting started)
+* `01_stat_functions.R` (simple stat functions; based on MOrales code)
+* `015_data_prep.R` (from raw data to data clean enough for scripts.  prereq to most scripts with higher numbers)
+* `019_predict_phenological_early.R` (fit phenological models iwthout optmization)
+* `021_produce_action_units.R` (use phenological functions to produce actionunits from climate data for statistical modeling in later steps)
+* `02_predict_phenological.R` (fit phenological models with optmization)
+* `03_helpers.R` (like 015: prep more data for later more statistical
+approaches)
+* `03_predict_data_driven.R` (simple linear modeling, with out-of-sample
+bootstrap (bootstrap/cv hybrid) validation)
+* `032_predict_data_driven_specgd.R` (more adventurous model using "data as
+model" to build lots of accumulators, regularized with ridge)
+* `05_fruitionsci_data.R` (TODO: repeat 02 and 03 approaches on data with fuller
+climate/environment data)
+* `.Renviron` (maintains analysis state across scripts with environemtn
+  variables)
+* `Makefile` (has example commands.  e.g. `make main`, `make predict1`)
