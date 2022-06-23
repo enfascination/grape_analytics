@@ -288,7 +288,6 @@ init <- with(parameters, c(Cstar_BB, Fstar_BB))
 init <- with(parameters, c(Topt.1, Cstar_BB, Fstar_BB,  Fstar_BB_Fl_obs, Fstar_Fl_Ver_obs, minn))
 res <- optim(init, function(x) fit_all_sites(x, obs_dates, site_info, climate.data, Year.target, Year.previous, model_type="phenology"), method="Nelder-Mead")
 }
-stop()
 
 # AMOUNT OF ERROR
 print(c("Number of blocks", length(obs_dates)))
