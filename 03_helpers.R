@@ -7,7 +7,7 @@ library(data.table)
 env <- Sys.getenv()
 FLOWERING_ELSE_VERAISON <- as.logical(env["FLOWERING_ELSE_VERAISON"])
 if (is.na(FLOWERING_ELSE_VERAISON)) { stop("is env loading?") }
-TAVG_ELSE_MIDRANGE <- TRUE #False is max-min/2 + min .    ave works better for daily, midrange for hourly
+TAVG_ELSE_MIDRANGE <- TRUE #False is not on the table
 if (TAVG_ELSE_MIDRANGE) {
     print("set for AVE TEMP")
 } else {
@@ -19,11 +19,12 @@ if (FLOWERING_ELSE_VERAISON) {
     print("set for VERAISON")
 }
 
-site_info <- read.csv("../data/01step/site_info.csv")
+site_info <- read.csv("../data/winkler2021/01step/site_info.csv")
 site_info <- site_info[,-1]
 
 # wrangle GDD
-gdd.orig <- read.csv("../data/01step/GDDValidation.csv")
+if (FALSE) {
+gdd.orig <- read.csv("../data/winkler2021/01step/GDDValidation.csv")
 gdd <- melt(gdd.orig, id=c("X"))
 colnames(gdd) <- c("date", "identifier", "GDD")
 gdd$identifier <- str_replace(gdd$identifier, '\\.', '-')
@@ -31,7 +32,9 @@ identifiers <- c( "AO-B1", "AO-B3", "AD-1", "AD-10", "SLV-2", "SLV-4", "CLV-17",
 gdd <- subset(gdd, identifier %in% identifiers)
 # imputing two ugly missing values roughly
 gdd[is.na(gdd$GDD), "GDD"] <- 200
+}
 
+if (FALSE) {
 site_identifiers <- site_info$Identifier
 for (i in 1:length(site_identifiers)) {
     gdds_by_id <- subset(gdd, identifier == site_identifiers[i] )
@@ -57,10 +60,12 @@ for (i in 1:length(site_identifiers)) {
 		site_info[site_info$Identifier == site_identifiers[i],"GDD_vr"] <- target_gdd_vr
 	}
 }
-write.csv(site_info, "../data/01step/site_info_gdd.csv")
+write.csv(site_info, "../data/winkler2021/01step/site_info_gdd.csv")
+}
 
+if (FALSE) {
 # wrangle action units as well, for comparing to GDD
-action_units <- read.csv("../data/01step/actionunits.csv")
+action_units <- read.csv("../data/winkler2021/01step/actionunits.csv")
 action_units <- action_units[,-1]
 
 site_identifiers <- site_info$Identifier
@@ -96,12 +101,14 @@ for (i in 1:length(site_identifiers)) {
 		site_info[site_info$Identifier == site_identifiers[i],"gdd_vr_alt"] <- target_units_gdd
 	}
 }
-write.csv(site_info, "../data/01step/site_info_gdd.csv")
+write.csv(site_info, "../data/winkler2021/01step/site_info_gdd.csv")
+}
 
+if (FALSE) {
 ### DAILY TEMP HISTOGRAM AS PREDICTORS
-site_info <- read.csv("../data/01step/site_info.csv")
+site_info <- read.csv("../data/winkler2021/01step/site_info.csv")
 site_info <- site_info[,-1]
-climate.data <- read.csv("../data/01step/climate.data.csv")
+climate.data <- read.csv("../data/winkler2021/01step/climate.data.csv")
 climate.data <- climate.data[,-1]
 ### init growth of site_info
 ### prelims to building histograms
@@ -134,7 +141,8 @@ for (i in 1:length(site_siteids)) {
 	new_names <- paste(names(specgd), 'C', sep='')
 	site_info[site_idx, new_names] <- specgd
 }
-write.csv(site_info, "../data/01step/site_info_specgd.csv")
+write.csv(site_info, "../data/winkler2021/01step/site_info_specgd.csv")
+}
 
 ### HOURLY TEMP HISTOGRAM AS PREDICTORS
 ### TODO
@@ -145,7 +153,7 @@ if (FALSE) { ### re-read raw xlsx.  super slow: try to get fread working on exce
 	hourly2 <- read_xlsx("../data/forrestel/ws_101-644_hourly_data.xlsx", col_types = col_types)
 	hourly3 <- read_xlsx("../data/forrestel/ws_669-969_hourly_data.xlsx", col_types = col_types)
 	ws_hourly <- rbind(hourly1,hourly2, hourly3)
-	write.csv(ws_hourly, "../data/01step/ws_hourly.csv")
+	write.csv(ws_hourly, "../data/winkler2021/01step/ws_hourly.csv")
 	names(hourly1)
 	names(hourly2)
 	names(hourly3)
@@ -155,22 +163,27 @@ if (FALSE) { ### re-read raw xlsx.  super slow: try to get fread working on exce
 	dim(hourly3)
 	dim(ws_hourly)
 } else {
-	ws_hourly <- data.frame(fread("../data/01step/ws_hourly.csv"))
-	ws_hourly <- ws_hourly[,-1] 
+	ws_hourly <- data.frame(fread("../data/winkler2021/winkler_weather_hourly.csv"))
+	ws_hourly <- subset(ws_hourly, minute(date_time) == 0)
+	### missing observations at several important weather stations
+	ws_hourly <- ws_hourly[!is.na(ws_hourly[,"temperature_hourly"]),]
+	ws_hourly$temperature_hourly <- (ws_hourly$temperature_hourly-32)*5/9
 }
-### missing observations at one important weather station
-ws_hourly <- ws_hourly[!is.na(ws_hourly[,"temperature_avg"]),]
 str(ws_hourly)
 unique(ws_hourly$weather_station_id)
-unique(ws_hourly$weather_station_name)
-summary(ws_hourly[,c("timestamp", "weather_station_id", "weather_station_name", "temperature_avg", "temperature_max", "temperature_min")])
+ws_hourly <- ws_hourly[,c("date_time", "weather_station_id", "temperature_hourly")]
+colnames(ws_hourly) <- c("timestamp", "weather_station_id", "temperature_avg")
+summary(ws_hourly[,c("timestamp", "weather_station_id", "temperature_avg" )])
 
+if (TRUE) {
 # table I'll merge into
-site_info <- read.csv("../data/01step/site_info.csv")
+site_info <- read.csv("../data/winkler2021/01step/site_info.csv")
 site_info <- site_info[,-1]
 # get temp bounds for final histogram
-tmin_global <- floor(min(ws_hourly$temperature_min))
-tmax_global <- ceiling(max(ws_hourly$temperature_max))
+#tmin_global <- floor(min(ws_hourly$temperature_avg))
+#tmax_global <- ceiling(max(ws_hourly$temperature_avg))
+tmin_global <- 5
+tmax_global <- 40
 t_names <- paste(tmin_global:tmax_global, 'C', sep='')
 t_names <- str_replace(t_names, "-", "_")
 ## prep dummary data frame and merge it in
@@ -189,19 +202,25 @@ for (i in 1:nrow(site_info)) {
 						                 date(ymd_hms(timestamp)) >= ymd(site_info[i,"date_fl"]) & 
 										 date(ymd_hms(timestamp)) <= ymd(site_info[i,"date_vr"]) )
 	}
-	if (FALSE) {
-		# minute scale
-		# must figure out the appropriate distribution.  I'm using univorm, but something else like normal or beta or even von mises may be right
-		specgd <- table(t(mapply(function(x,y) round(seq(from=x, to=y, length.out=60)), temp_by_site$temperature_min, temp_by_site$temperature_max)))
-	} else {
-		# hour scale
-		if (TAVG_ELSE_MIDRANGE) {
-			specgd <- table(round(temp_by_site$temperature_avg))
-		} else {
-			specgd <- table(round(( temp_by_site$temperature_max-temp_by_site$temperature_min )/2 + temp_by_site$temperature_min))
-		}
+	if(nrow(temp_by_site ) == 0) {
+		next
 	}
+	# hour scale
+	if (TAVG_ELSE_MIDRANGE) {
+		specgd <- table(round(temp_by_site$temperature_avg))
+	} else {
+		specgd <- table(round(( temp_by_site$temperature_max-temp_by_site$temperature_min )/2 + temp_by_site$temperature_min))
+	}
+	### handle rare extremes by bundling
+	#specgdb <-  c(sum(specgd[as.numeric(names(specgd)) <= 5]), 
+								#specgd[as.numeric(names(specgd)) > 5 & as.numeric(names(specgd)) < 40],
+								#sum(specgd[as.numeric(names(specgd)) >= 40])
+								#)
+	#names(specgdb)[1] <-  "<=5"
+	#names(specgdb)[length(specgdb)] <- "40>="
+	#specgd <- specgdb
 	new_names <- paste(names(specgd), 'C', sep='')
 	site_info[i, new_names] <- specgd
 }
-write.csv(site_info, "../data/01step/site_info_specgd_hourly.csv")
+write.csv(site_info, "../data/winkler2021/01step/site_info_specgd_hourly.csv")
+}
