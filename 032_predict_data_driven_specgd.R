@@ -10,7 +10,7 @@ env <- Sys.getenv()
 FLOWERING_ELSE_VERAISON <- as.logical(env["FLOWERING_ELSE_VERAISON"])
 LM_ELSE_RIDGE <- FALSE # false = ridge regression
 ###FLOWERING_ELSE_VERAISON <- FALSE #FALSE does veraison, which is where most of the data is
-HOURLY_ELSE_DAILY <- FALSE #hourly is just better? not yet ...
+HOURLY_ELSE_DAILY <- TRUE #hourly is just better? not yet ...
 if (LM_ELSE_RIDGE) {
     print("set for LINEAR MODEL")
 } else {
@@ -28,9 +28,9 @@ if (HOURLY_ELSE_DAILY) {
 }
 
 if (HOURLY_ELSE_DAILY) {
-	site_info <- read.csv("../data/01step/site_info_specgd_hourly.csv")
+	site_info <- read.csv("../data/winkler2021/01step/site_info_specgd_hourly.csv")
 } else {
-	site_info <- read.csv("../data/01step/site_info_specgd.csv")
+	site_info <- read.csv("../data/winkler2021/01step/site_info_specgd.csv")
 }
 site_info <- site_info[,-1]
 site_info_fit <- site_info 
@@ -47,6 +47,7 @@ if (FLOWERING_ELSE_VERAISON) {
 xnam <- names(site_info_fit)[grep("C$", names(site_info_fit))]
 # exclude columns that are all zeros (temp never observed)
 xnam <- xnam[(colSums(site_info_fit[,xnam]) != 0)]
+xnam <- xnam[!is.na(xnam)]
 if (LM_ELSE_RIDGE) {
 	fmla <- as.formula(paste("doy ~ ", paste(xnam, collapse= "+")))
 	phen.model.lm <- lm(fmla, data=site_info_fit)
@@ -56,7 +57,7 @@ if (LM_ELSE_RIDGE) {
 	grid <- 1
 	#cv.glmnet(y=site_info_fit[,"doy"], x=as.matrix(site_info_fit[,xnam]))
 	# shows that good lambdas are within 0.6 and 1.2, so I'm sticking with 1, which I started with.
-	phen.model.ridge <- glmnet(y=site_info_fit[,"doy"], x=as.matrix(site_info_fit[,xnam]), alpha = 0, lambda = grid)
+phen.model.ridge <- glmnet(y=site_info_fit[,"doy"], x=as.matrix(site_info_fit[,xnam]), alpha = 0, lambda = grid)
 	pred <- predict(phen.model.ridge, s=grid, newx=as.matrix(site_info_fit[,xnam]), type="response")
 }
 #summary(phen.model.lm)
@@ -65,6 +66,16 @@ if (LM_ELSE_RIDGE) {
 print("IN SAMPLE")
 print(length(pred))
 print(RMSE(site_info_fit$doy, pred))
+
+## INSPECTION
+#temp range:
+temps_dist <- colSums(site_info_fit[,xnam])
+# selected coefficients
+temps_penalized <- as.numeric(coef(phen.model.ridge ))
+names(temps_penalized) <- row.names(coef(phen.model.ridge ))
+cbind(temps_dist , weights=temps_penalized[-1] )
+
+if (FALSE) {
 
 # PREDICT WITH MODEL: OUT OF SAMPLE CIs WITH OUT OF SAMPLE BOOTSTRAP
 l <- nrow(site_info_fit)
@@ -80,6 +91,7 @@ for (i in 1:100) {
 		xnam <- names(site_info_fit)[grep("C$", names(site_info_fit))]
 		# exclude columns that are all zeros (temp never observed)
 		xnam <- xnam[(colSums(site_info_fit[,xnam]) != 0)]
+    xnam <- xnam[!is.na(xnam)]
 		fmla <- as.formula(paste("doy ~ ", paste(xnam, collapse= "+")))
 	}
 	if (LM_ELSE_RIDGE) {
@@ -98,11 +110,5 @@ print("OUT OF SAMPLE")
 print(mean(rmses))
 print(quantile(rmses))
 
+}
 
-## INSPECTION
-#temp range:
-temps_dist <- colSums(site_info_fit[,xnam])
-# selected coefficients
-temps_penalized <- as.numeric(coef(phen.model.ridge ))
-names(temps_penalized) <- row.names(coef(phen.model.ridge ))
-cbind(temps_dist , weights=temps_penalized[-1] )
